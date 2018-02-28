@@ -29,7 +29,7 @@ function bezierSurfacePoint(u, v, controlPoints) =
   ];
 
 function bezierSurfacePoints(controlPoints, samples=10) = 
-  [for (i=[0:samples]) [for (j=[0:samples]) bezierSurfacePoint(i * (1 / samples), j * (1 / samples), controlPoints)]];
+  [for (i=[0:samples - 1]) [for (j=[0:samples - 1]) bezierSurfacePoint(i * (1 / samples), j * (1 / samples), controlPoints)]];
 
 function solveBezierPolynomial(t, coefficientArray, weightArray, position=0, result=0) =
   (position >= len(coefficientArray) ? result :
@@ -60,3 +60,35 @@ module bezier(controlPoints, samples=10) {
     %color("red", 1.0) translate([cp[0], cp[1], len(cp) == 3 ? cp[2] : 0]) children(0);
   } 
 }
+
+function flattenPoints(points, n=0, result=[]) = 
+  (n >= len(points) ? result :
+    flattenPoints(points, n + 1, concat(result, points[n])));
+
+function squareGridSurfaceFaces(sideSize) =
+  let (secondStart = sideSize * sideSize)
+  flattenPoints(flattenPoints([for (col=[0:sideSize - 2]) [for (row=[0:sideSize - 2]) [
+    [(col * sideSize) + row, (col * sideSize) + row + 1, (col + 1) * sideSize + row],
+    [(col + 1) * sideSize + row, col * sideSize + row + 1, (col + 1) * sideSize + row + 1],
+    [(col * sideSize) + row + 1 + secondStart, (col * sideSize) + row + secondStart, (col + 1) * sideSize + row + secondStart],
+    [col * sideSize + row + 1 + secondStart, (col + 1) * sideSize + row + secondStart, (col + 1) * sideSize + row + 1 + secondStart]
+  ]]]));
+
+function squareGridEdgeFaces(sideSize) = 
+  let (secondStart = sideSize * sideSize)
+  flattenPoints(flattenPoints([
+    [for (step=[0:sideSize:secondStart - sideSize * 2]) [
+      [step, step + sideSize, step + secondStart],
+      [step + sideSize, step + sideSize + secondStart, step + secondStart],
+      [step + sideSize - 1 + sideSize, step + sideSize - 1, step + sideSize - 1 + secondStart],
+      [step + sideSize - 1 + sideSize, step + sideSize - 1 + secondStart, step + sideSize - 1 + sideSize + secondStart]
+    ]],
+    [for (step=[0:sideSize - 2]) [
+      [step + 1, step, step + secondStart],
+      [step + 1, step + secondStart, step + 1 + secondStart],
+      [(secondStart - sideSize) + step, (secondStart - sideSize) + step + 1, secondStart * 2 - sideSize + step],
+      [secondStart * 2 - sideSize + step, (secondStart - sideSize) + step + 1, secondStart * 2 - sideSize + step + 1]
+    ]]
+  ]));
+
+function squareGridFaces(sideSize) = concat(squareGridEdgeFaces(sideSize), squareGridSurfaceFaces(sideSize));
