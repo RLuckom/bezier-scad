@@ -33,13 +33,16 @@ module bezierPointDots(controlPointArrays, samples=10) {
 
 sps = concat(flattenPoints(bezierSurfacePoints(POINTS)), flattenPoints(bezierSurfacePoints(RAISED_POINTS)));
 
+echo(squareGridSurfaceFaces(10));
+echo(len(squareGridSurfaceFaces(10)));
+echo(len(sps));
+echo(sps[109]);
+echo(sps[110]);
 /*
-echo(squareGridEdgeFaces(10));
 for (points = squareGridEdgeFaces(10)) {
   echo([for (point = points) sps[point]]);
 }
 
-echo(len(sps));
 
 for (p = bezierSurfacePoints(POINTS)[0]) {
   echo(p);

@@ -37,7 +37,7 @@ function mult(vec, s) = [vec[0] * s, vec[1] * s, (len(vec) == 3 ? vec[2] * s : 0
 function addVecs(v1, v2) = [v1[0] + v2[0], v1[1] + v2[1], (len(v1) == 3 ? v1[2] : 0) + (len(v2) == 3 ? v2[2] : 0)];
 
 function offsetBezierSurfacePoints(controlPoints, offsetDistance=5, samples=10) = 
-  [for (i=[0:samples - 1]) [for (j=[0:samples - 1]) addVecs(bezierSurfacePoint(i * (1 / samples), j * (1 / samples), controlPoints), mult(bezierSurfaceNormal(i * (1 / samples), j * (1 / samples), controlPoints), offsetDistance))]];
+  [for (i=[0:samples]) [for (j=[0:samples]) addVecs(bezierSurfacePoint(i * (1 / samples), j * (1 / samples), controlPoints), mult(bezierSurfaceNormal(i * (1 / samples), j * (1 / samples), controlPoints), offsetDistance))]];
 
 function solveBezierSurfacePolynomialStep(u, v, coefficientArray, weightArray, nposition, mposition=0, result=0) = 
   (mposition >= len(coefficientArray) ? result :
@@ -61,7 +61,7 @@ function bezierSurfacePoint(u, v, controlPoints) =
   ];
 
 function bezierSurfacePoints(controlPoints, samples=10) = 
-  [for (i=[0:samples - 1]) [for (j=[0:samples - 1]) bezierSurfacePoint(i * (1 / samples), j * (1 / samples), controlPoints)]];
+  [for (i=[0:samples]) [for (j=[0:samples]) bezierSurfacePoint(i * (1 / samples), j * (1 / samples), controlPoints)]];
 
 
 function solveBezierPolynomial(t, coefficientArray, weightArray, position=0, result=0) =
@@ -86,28 +86,28 @@ function flattenPoints(points, n=0, result=[]) =
     flattenPoints(points, n + 1, concat(result, points[n])));
 
 function squareGridSurfaceFaces(sideSize) =
-  let (secondStart = sideSize * sideSize)
-  flattenPoints(flattenPoints([for (col=[0:sideSize - 2]) [for (row=[0:sideSize - 2]) [
-    [(col * sideSize) + row, (col * sideSize) + row + 1, (col + 1) * sideSize + row],
-    [(col + 1) * sideSize + row, col * sideSize + row + 1, (col + 1) * sideSize + row + 1],
-    [(col * sideSize) + row + 1 + secondStart, (col * sideSize) + row + secondStart, (col + 1) * sideSize + row + secondStart],
-    [col * sideSize + row + 1 + secondStart, (col + 1) * sideSize + row + secondStart, (col + 1) * sideSize + row + 1 + secondStart]
+  let (secondStart = (sideSize + 1) * (sideSize + 1))
+  flattenPoints(flattenPoints([for (col=[0:sideSize - 1]) [for (row=[0:sideSize - 1]) [
+    [col * (sideSize + 1) + row, (col * (sideSize + 1)) + row + 1, (col + 1) * (sideSize + 1) + row],
+    [(col + 1) * (sideSize + 1) + row, col * (sideSize + 1) + row + 1, (col + 1) * (sideSize + 1) + row + 1],
+    [(col * (sideSize + 1)) + row + 1 + secondStart, (col * (sideSize + 1)) + row + secondStart, (col + 1) * (sideSize + 1) + row + secondStart],
+    [col * (sideSize + 1) + row + 1 + secondStart, (col + 1) * (sideSize + 1) + row + secondStart, (col + 1) * (sideSize + 1) + row + 1 + secondStart]
   ]]]));
 
 function squareGridEdgeFaces(sideSize) = 
-  let (secondStart = sideSize * sideSize)
+  let (secondStart = (sideSize + 1) * (sideSize + 1))
   flattenPoints(flattenPoints([
-    [for (step=[0:sideSize:secondStart - sideSize * 2]) [
-      [step, step + sideSize, step + secondStart],
-      [step + sideSize, step + sideSize + secondStart, step + secondStart],
-      [step + sideSize - 1 + sideSize, step + sideSize - 1, step + sideSize - 1 + secondStart],
-      [step + sideSize - 1 + sideSize, step + sideSize - 1 + secondStart, step + sideSize - 1 + sideSize + secondStart]
+    [for (step=[0:sideSize + 1:secondStart - (sideSize * 2)]) [
+      [step, step + sideSize + 1, step + secondStart],
+      [step + sideSize + 1, step + sideSize + 1 + secondStart, step + secondStart],
+      [step + sideSize + sideSize + 1, step + sideSize, step + sideSize + secondStart],
+      [step + sideSize + sideSize + 1, step + sideSize + secondStart, step + sideSize + sideSize + 1 + secondStart]
     ]],
-    [for (step=[0:sideSize - 2]) [
-      [step + 1, step, step + secondStart],
-      [step + 1, step + secondStart, step + 1 + secondStart],
-      [(secondStart - sideSize) + step, (secondStart - sideSize) + step + 1, secondStart * 2 - sideSize + step],
-      [secondStart * 2 - sideSize + step, (secondStart - sideSize) + step + 1, secondStart * 2 - sideSize + step + 1]
+    [for (step=[0:sideSize]) [
+      [step, step - 1, step + secondStart],
+      [step + secondStart, step -1, step - 1 + secondStart],
+      [(secondStart - sideSize) + step - 1,(secondStart - sideSize) + step, secondStart * 2 - sideSize + step],
+      [(secondStart - sideSize) + step - 1, secondStart * 2 - sideSize + step, secondStart * 2 - sideSize + step - 1]
     ]]
   ]));
 
@@ -126,6 +126,12 @@ module bezier(controlPoints, samples=10) {
   } 
 }
 
-module bezierSurface(controlPoints, thickness=1, samples=10) {
-  polyhedron(points=concat(flattenPoints(bezierSurfacePoints(controlPoints, samples)), flattenPoints(offsetBezierSurfacePoints(controlPoints, thickness, samples))), faces=concat(squareGridEdgeFaces(samples), squareGridSurfaceFaces(samples)));
+module bezierSurface(controlPointArrays, thickness=1, samples=10) {
+  p = concat(flattenPoints(bezierSurfacePoints(controlPointArrays, samples)), flattenPoints(offsetBezierSurfacePoints(controlPointArrays, thickness, samples)));
+  polyhedron(points=p, faces=concat(squareGridEdgeFaces(samples), squareGridSurfaceFaces(samples)));
+  for (controlPointArray = controlPointArrays) {
+    for(cp=controlPointArray) {
+      %color("red", 1.0) translate([cp[0], cp[1], len(cp) == 3 ? cp[2] : 0]) sphere(1, center=true);
+    }
+  } 
 }
