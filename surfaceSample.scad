@@ -33,6 +33,7 @@ module bezierPointDots(controlPointArrays, samples=10) {
 
 sps = concat(flattenPoints(bezierSurfacePoints(POINTS)), flattenPoints(bezierSurfacePoints(RAISED_POINTS)));
 
+/*
 echo(squareGridEdgeFaces(10));
 for (points = squareGridEdgeFaces(10)) {
   echo([for (point = points) sps[point]]);
@@ -49,6 +50,19 @@ for (p = bezierSurfacePoints(RAISED_POINTS)[0]) {
   echo(p);
   translate(p) sphere(1);
 }
+*/
 
-//polyhedron(points=concat(flattenPoints(bezierSurfacePoints(POINTS)), flattenPoints(bezierSurfacePoints(RAISED_POINTS))), faces=squareGridFaces(10));
-polyhedron(points=concat(flattenPoints(bezierSurfacePoints(POINTS, 40)), flattenPoints(bezierSurfacePoints(RAISED_POINTS, 40))), faces=concat(squareGridEdgeFaces(40), squareGridSurfaceFaces(40)));
+FLAT_POINTS = [
+  [[0, 0, 0], [1, 0, 0], [2, 0, 0], [3, 0, 0]],
+  [[0, 1, 0], [1, 1, 0], [2, 1, 0], [3, 1, 0]],
+  [[0, 2, 0], [1, 2, 0], [2, 2, 0], [3, 2, 0]],
+  [[0, 3, 0], [1, 3, 0], [2, 3, 0], [3, 3, 0]]
+];
+
+echo(solveDerivativeValue(1, 3, 0, 1, 1));
+echo(0 * pow(1 - 1, -1));
+
+echo(bezierSurfaceTangentVec(0.8, 1, FLAT_POINTS, 1));
+
+echo(offsetBezierSurfacePoints(FLAT_POINTS));
+bezierSurface(POINTS, 1, 40); 
