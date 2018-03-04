@@ -85,14 +85,15 @@ function flattenPoints(points, n=0, result=[]) =
   (n >= len(points) ? result :
     flattenPoints(points, n + 1, concat(result, points[n])));
 
-function squareGridSurfaceFaces(sideSize) =
-  let (secondStart = (sideSize + 1) * (sideSize + 1))
+function squareGridSurfaceFaces(sideSize, faceNumber = 0) =
+  let (start = (sideSize + 1) * (sideSize + 1) * faceNumber)
   flattenPoints(flattenPoints([for (col=[0:sideSize - 1]) [for (row=[0:sideSize - 1]) [
-    [col * (sideSize + 1) + row, (col * (sideSize + 1)) + row + 1, (col + 1) * (sideSize + 1) + row],
-    [(col + 1) * (sideSize + 1) + row, col * (sideSize + 1) + row + 1, (col + 1) * (sideSize + 1) + row + 1],
-    [(col * (sideSize + 1)) + row + 1 + secondStart, (col * (sideSize + 1)) + row + secondStart, (col + 1) * (sideSize + 1) + row + secondStart],
-    [col * (sideSize + 1) + row + 1 + secondStart, (col + 1) * (sideSize + 1) + row + secondStart, (col + 1) * (sideSize + 1) + row + 1 + secondStart]
+    [col * (sideSize + 1) + row + start, (col * (sideSize + 1)) + row + 1 + start, (col + 1) * (sideSize + 1) + row + start],
+    [(col + 1) * (sideSize + 1) + row + start, col * (sideSize + 1) + row + 1 + start, (col + 1) * (sideSize + 1) + row + 1 + start],
   ]]]));
+
+function dualSquareGridSurfaceFaces(sideSize) =
+  concat(squareGridSurfaceFaces(sideSize), squareGridSurfaceFaces(sideSize, 1));
 
 function squareGridEdgeFaces(sideSize) = 
   let (secondStart = (sideSize + 1) * (sideSize + 1))
@@ -111,9 +112,9 @@ function squareGridEdgeFaces(sideSize) =
     ]]
   ]));
 
-function squareGridFaces(sideSize) = concat(squareGridEdgeFaces(sideSize), squareGridSurfaceFaces(sideSize));
+function dualSquareGridFaces(sideSize) = concat(squareGridEdgeFaces(sideSize), dualSquareGridSurfaceFaces(sideSize));
 
-module bezier(controlPoints, samples=10) {
+module bezier(controlPoints, samples=10, controlPointSize=1) {
   points = bezierPoints(controlPoints, samples);
   for (point=[1:len(points) - 1]) {
     hull() {
@@ -121,17 +122,41 @@ module bezier(controlPoints, samples=10) {
       translate(points[point]) children(0);
     }
   }
-  for (cp = controlPoints) {
-    %color("red", 1.0) translate([cp[0], cp[1], len(cp) == 3 ? cp[2] : 0]) children(0);
-  } 
+  showBezierControlPoints(controlPoints);
 }
 
-module bezierSurface(controlPointArrays, thickness=1, samples=10) {
-  p = concat(flattenPoints(bezierSurfacePoints(controlPointArrays, samples)), flattenPoints(offsetBezierSurfacePoints(controlPointArrays, thickness, samples)));
-  polyhedron(points=p, faces=concat(squareGridEdgeFaces(samples), squareGridSurfaceFaces(samples)));
-  for (controlPointArray = controlPointArrays) {
-    for(cp=controlPointArray) {
-      %color("red", 1.0) translate([cp[0], cp[1], len(cp) == 3 ? cp[2] : 0]) sphere(1, center=true);
+module showBezierControlPoints(controlPoints, controlPointSize=1) {
+  if (controlPointSize != 0) {
+    for (cp = controlPoints) {
+      %color("red", 1.0) translate([cp[0], cp[1], len(cp) == 3 ? cp[2] : 0]) sphere(controlPointSize, center=true);
     }
-  } 
+  }
+}
+
+module showBezierSurfaceControlPoints(controlPointArrays, controlPointSize=1) {
+  if (controlPointSize != 0) {
+    for (controlPoints = controlPointArrays) {
+      showBezierControlPoints(controlPoints, controlPointSize);
+    }
+  }
+}
+
+module bezierEnvelope(cp1, cp2, samples=10, controlPointSize=1) {
+  points = concat(
+    flattenPoints(bezierSurfacePoints(cp1, samples)),
+    flattenPoints(bezierSurfacePoints(cp2, samples))
+  );
+  faces = dualSquareGridSurfaceFaces(samples);
+  polyhedron(points=points, faces=faces);
+  showBezierSurfaceControlPoints(cp1, controlPointSize);
+  showBezierSurfaceControlPoints(cp2, controlPointSize);
+}
+
+module bezierSurface(controlPointArrays, thickness=1, samples=10, controlPointSize=1) {
+  p = concat(
+    flattenPoints(bezierSurfacePoints(controlPointArrays, samples)),
+    flattenPoints(offsetBezierSurfacePoints(controlPointArrays, thickness, samples))
+  );
+  polyhedron(points=p, faces=dualSquareGridFaces(samples));
+  showBezierSurfaceControlPoints(controlPointArrays, controlPointSize);
 }
