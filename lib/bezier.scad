@@ -29,15 +29,66 @@ function bezierSurfaceTangentVec(u, t, controlPoints, direction) =
 function bezierSurfaceNormal(u, t, controlPoints) = 
   normalize(cross(bezierSurfaceTangentVec(u, t, controlPoints, 1), bezierSurfaceTangentVec(t, u, controlPoints, 0)));
 
+function mag(vec) = let (z = len(vec) == 3 ? vec[2] : 0) sqrt(vec[0] * vec[0] + vec[1] * vec[1] + z * z);
+
 function normalize(vec) = 
-  let (z = len(vec) == 3 ? vec[2] : 0, mag = sqrt(vec[0] * vec[0] + vec[1] * vec[1] + z * z)) [vec[0] / mag, vec[1] / mag, z / mag];
+  let (z = len(vec) == 3 ? vec[2] : 0, m = mag(vec)) [vec[0] / m, vec[1] / m, z / m];
 
 function mult(vec, s) = [vec[0] * s, vec[1] * s, (len(vec) == 3 ? vec[2] * s : 0)];
 
 function addVecs(v1, v2) = [v1[0] + v2[0], v1[1] + v2[1], (len(v1) == 3 ? v1[2] : 0) + (len(v2) == 3 ? v2[2] : 0)];
 
+function offsetBezierSurfacePoint(controlPoints, offsetDistance, i, j) =
+  let (norm = bezierSurfaceNormal(i,j,controlPoints), surfacePoint = bezierSurfacePoint(i,j,controlPoints)) addVecs(surfacePoint, mult(norm, offsetDistance));
+
 function offsetBezierSurfacePoints(controlPoints, offsetDistance=5, samples=10) = 
-  [for (i=[0:samples]) [for (j=[0:samples]) addVecs(bezierSurfacePoint(i * (1 / samples), j * (1 / samples), controlPoints), mult(bezierSurfaceNormal(i * (1 / samples), j * (1 / samples), controlPoints), offsetDistance))]];
+  interpolateMissingOffsetValues(
+    [for (i=[0:samples]) [for (j=[0:samples]) offsetBezierSurfacePoint(controlPoints, offsetDistance, i * (1 / samples), j * (1 / samples))]],
+    controlPoints, offsetDistance
+  );
+
+function interpolateMissingOffsetValues(offsetPoints, controlPoints, offsetDistance) =
+  let (
+    side = len(offsetPoints)
+  ) [for (row=[0:side - 1]) [for (col=[0:side - 1]) (
+    (isUnsafe(offsetPoints[row][col]) ? 
+    interpolatePoint(
+      offsetPoints, 
+      row,
+      col, 
+      row * (1 / side),
+      col * (1 / side),
+      1 / side,
+      controlPoints,
+      offsetDistance) :
+    offsetPoints[row][col]
+  )
+  )]];
+
+function filterSafe(points) = [for (p=points) if (!isUnsafe(p)) p];
+
+function addVecArray(vA, n=0, res=[0, 0, 0]) =
+  (n == len(vA) ? res : addVecArray(vA, n + 1, addVecs(res, vA[n])));
+
+function divVec(vec, scalar) =
+  [vec[0] / scalar, vec[1] / scalar, len(vec) == 3 ? vec[2] / scalar : 0];
+
+function interpolatePoint(points, row, col, u, t, utEpsilon, controlPoints, offsetDistance) =
+  let (adjacentNorms = filterSafe([
+    bezierSurfaceNormal(u + utEpsilon, t, controlPoints),
+    bezierSurfaceNormal(u - utEpsilon, t, controlPoints),
+    bezierSurfaceNormal(u, t + utEpsilon, controlPoints),
+    bezierSurfaceNormal(u, t - utEpsilon, controlPoints)
+  ])) (addVecs(
+      bezierSurfacePoint(u, t, controlPoints), 
+      mult(
+        divVec(
+          addVecArray(adjacentNorms),
+          len(adjacentNorms)
+        ),
+        offsetDistance
+      )
+     ));
 
 function solveBezierSurfacePolynomialStep(u, v, coefficientArray, weightArray, nposition, mposition=0, result=0) = 
   (mposition >= len(coefficientArray) ? result :
@@ -71,6 +122,14 @@ function solveBezierPolynomial(t, coefficientArray, weightArray, position=0, res
     )
   );
 
+/*
+function allSame(points, n=0) = 
+  (n == len(points) - 1 ? true : 
+    ((points[n][0] == points[n+1][0] && points[n][1] == points[n+1][1] && (len(points[n]) == 3 ? points[n][2] : 0) == len(points[n+1]) == 3 ? points[n+1][2] : 0) ? allSame(points, n + 1) : false
+    )
+  );
+*/
+
 function bezierPoint(t, controlPoints) =
   [
     solveBezierPolynomial(t, POLY_COEFFICIENTS[len(controlPoints) - 1], [for (i=[0: len(controlPoints) - 1]) controlPoints[i][0]]),
@@ -85,15 +144,38 @@ function flattenPoints(points, n=0, result=[]) =
   (n >= len(points) ? result :
     flattenPoints(points, n + 1, concat(result, points[n])));
 
-function squareGridSurfaceFaces(sideSize, faceNumber = 0) =
+function squareGridSurfaceFaces(sideSize, faceNumber=0, forward=true) =
   let (start = (sideSize + 1) * (sideSize + 1) * faceNumber)
-  flattenPoints(flattenPoints([for (col=[0:sideSize - 1]) [for (row=[0:sideSize - 1]) [
-    [col * (sideSize + 1) + row + start, (col * (sideSize + 1)) + row + 1 + start, (col + 1) * (sideSize + 1) + row + start],
-    [(col + 1) * (sideSize + 1) + row + start, col * (sideSize + 1) + row + 1 + start, (col + 1) * (sideSize + 1) + row + 1 + start],
-  ]]]));
+  flattenPoints(flattenPoints([for (col=[0:sideSize - 1]) [for (row=[0:sideSize - 1])
+    (forward ?  [
+    [
+      col * (sideSize + 1) + row + start,
+      (col * (sideSize + 1)) + row + 1 + start,
+      (col + 1) * (sideSize + 1) + row + start
+    ],
+    [
+      (col + 1) * (sideSize + 1) + row + start,
+      col * (sideSize + 1) + row + 1 + start,
+      (col + 1) * (sideSize + 1) + row + 1 + start
+    ]] :
+    [[
+      (col * (sideSize + 1)) + row + 1 + start,
+      col * (sideSize + 1) + row + start,
+      (col + 1) * (sideSize + 1) + row + start
+    ],
+    [
+      col * (sideSize + 1) + row + 1 + start,
+      (col + 1) * (sideSize + 1) + row + start,
+      (col + 1) * (sideSize + 1) + row + 1 + start
+    ]
+    ])
+  ]]));
 
 function dualSquareGridSurfaceFaces(sideSize) =
-  concat(squareGridSurfaceFaces(sideSize), squareGridSurfaceFaces(sideSize, 1));
+  concat(
+    squareGridSurfaceFaces(sideSize)
+    , squareGridSurfaceFaces(sideSize, 1, false)
+);
 
 function squareGridEdgeFaces(sideSize) = 
   let (secondStart = (sideSize + 1) * (sideSize + 1))
@@ -104,11 +186,11 @@ function squareGridEdgeFaces(sideSize) =
       [step + sideSize + sideSize + 1, step + sideSize, step + sideSize + secondStart],
       [step + sideSize + sideSize + 1, step + sideSize + secondStart, step + sideSize + sideSize + 1 + secondStart]
     ]],
-    [for (step=[0:sideSize]) [
+    [for (step=[1:sideSize]) [
       [step, step - 1, step + secondStart],
       [step + secondStart, step -1, step - 1 + secondStart],
-      [(secondStart - sideSize) + step - 1,(secondStart - sideSize) + step, secondStart * 2 - sideSize + step],
-      [(secondStart - sideSize) + step - 1, secondStart * 2 - sideSize + step, secondStart * 2 - sideSize + step - 1]
+      [(secondStart - sideSize - 1) + step - 1,(secondStart - sideSize - 1) + step, secondStart * 2 - sideSize - 1 + step],
+      [(secondStart - sideSize - 1) + step - 1, secondStart * 2 - sideSize - 1 + step, secondStart * 2 - sideSize - 1 + step - 1]
     ]]
   ]));
 
@@ -133,6 +215,22 @@ module showBezierControlPoints(controlPoints, controlPointSize=1) {
   }
 }
 
+function sub(v1, v2) = [
+  v1[0] - v2[0],
+  v1[1] - v2[1],
+  (len(v1) == 3 ? v1[2] : 0) -  (len(v2) == 3 ? v2[2] : 0)
+];
+
+function hasArea(points) = 
+  mag(cross(sub(points[0], points[1]), sub(points[1], points[2]))) > 0;
+
+function deleteZeroAreaFaces(points, faces, n=0, newFaces=[]) =
+  (n == len(faces) ? newFaces : 
+    (hasArea([points[faces[n][0]], points[faces[n][1]], points[faces[n][2]]]) ? 
+      deleteZeroAreaFaces(points, faces, n + 1, concat(newFaces, [faces[n]])) :
+      deleteZeroAreaFaces(points, faces, n + 1, newFaces))
+  );
+
 module showBezierSurfaceControlPoints(controlPointArrays, controlPointSize=1) {
   if (controlPointSize != 0) {
     for (controlPoints = controlPointArrays) {
@@ -152,11 +250,43 @@ module bezierEnvelope(cp1, cp2, samples=10, controlPointSize=1) {
   showBezierSurfaceControlPoints(cp2, controlPointSize);
 }
 
-module bezierSurface(controlPointArrays, thickness=1, samples=10, controlPointSize=1) {
+function findUnsafePoints(points, n=0, unsafePoints=[]) =
+  (n == len(points) ? unsafePoints : 
+      isUnsafe(points[n]) ? findUnsafePoints(points, n + 1, concat(unsafePoints, [n])) :
+      findUnsafePoints(points, n + 1, unsafePoints)
+  );
+
+function isUnsafe(point) =
+  (!point) || (
+    point[0] * 1 != point[0] ||
+    point[1] * 1 != point[1] || 
+    point[2] * 1 != point[2]
+  );
+
+function zeroOutUnsafePoints(points, unsafePoints) =
+  [for (n=[0:len(points) - 1]) (len(search(n, unsafePoints)) == 0 ? points[n] : [0,0,0])];
+
+function containsUnsafePoints(face, unsafePoints) = (
+  search(face[0], unsafePoints) ||
+  search(face[1], unsafePoints) ||
+  search(face[2], unsafePoints)
+);
+
+function filterOutUnsafeFaces(faces, unsafePoints) = 
+  [for (face=faces) if (!containsUnsafePoints(face, unsafePoints)) face];
+
+module bezierSurface(controlPointArrays, thickness=1, samples=10, controlPointSize=1, checkFaces=false) {
   p = concat(
     flattenPoints(bezierSurfacePoints(controlPointArrays, samples)),
     flattenPoints(offsetBezierSurfacePoints(controlPointArrays, thickness, samples))
   );
-  polyhedron(points=p, faces=dualSquareGridFaces(samples));
+  naiveFaces = dualSquareGridFaces(samples);
+  if (checkFaces) {
+    unsafePoints = findUnsafePoints(p);
+    facesWithoutUnsafePoints = filterOutUnsafeFaces(naiveFaces, unsafePoints);
+    polyhedron(points=zeroOutUnsafePoints(p, unsafePoints), faces=deleteZeroAreaFaces(p, filterOutUnsafeFaces(facesWithoutUnsafePoints, unsafePoints)));
+  } else {
+    polyhedron(points=p, faces=naiveFaces);
+  }
   showBezierSurfaceControlPoints(controlPointArrays, controlPointSize);
 }
