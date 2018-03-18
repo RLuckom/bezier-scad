@@ -290,3 +290,13 @@ module bezierSurface(controlPointArrays, thickness=1, samples=10, controlPointSi
   }
   showBezierSurfaceControlPoints(controlPointArrays, controlPointSize);
 }
+
+module bezierSolid(faceControlPointsArray, samples=10, controlPointSize=1) {
+  faces = flattenPoints([for (i=[0:len(faceControlPointsArray) - 1]) squareGridSurfaceFaces(samples, i)]);
+  points = flattenPoints([for (i=faceControlPointsArray) flattenPoints(bezierSurfacePoints(i, samples))]);
+  polyhedron(points=points, faces=faces);
+  for (i=faceControlPointsArray) {
+    showBezierSurfaceControlPoints(i, controlPointSize);
+  }
+}
+

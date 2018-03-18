@@ -355,44 +355,4 @@ patches = [
 ];
 
 
-
-/*
-bezierSurface(patches[0], 0.03, 5, 0.1);
-bezierSurface(patches[1], 0.03, 5, 0.1);
-bezierSurface(patches[2], 0.03, 5, 0.1);
-bezierSurface(patches[3], 0.03, 5, 0.1);
-bezierSurface(patches[4], 0.03, 5, 0.1);
-bezierSurface(patches[5], 0.03, 5, 0.1);
-bezierSurface(patches[6], 0.03, 5, 0.1);
-bezierSurface(patches[7], 0.03, 5, 0.1);
-bezierSurface(patches[8], 0.03, 5, 0.1);
-bezierSurface(patches[9], 0.03, 5, 0.1);
-bezierSurface(patches[11], 0.03, 5, 0.1);
-bezierSurface(patches[12], 0.03, 5, 0.1);
-bezierSurface(patches[13], 0.03, 5, 0.1);
-bezierSurface(patches[14], 0.03, 5, 0.1);
-bezierSurface(patches[15], 0.01, 5, 0.1);
-bezierSurface(patches[16], 0.01, 5, 0.1);
-bezierSurface(patches[17], 0.01, 5, 0.1);
-bezierSurface(patches[18], 0.03, 17, 0.1);
-bezierSurface(patches[19], 0.03, 17, 0.1);
-*/
-//bezierSurface(patches[20], 0.03, 5, 0.1, true);
-//bezierSurface(patches[21], 0.03, 5, 0.1, true);
-//bezierSurface(patches[22], 0.03, 5, 0.1);
-//bezierSurface(patches[23], 0.03, 5, 0.1);
-//bezierSurface(patches[24], 0.03, 5, 0.1);
-//bezierSurface(patches[25], 0.03, 5, 0.1);
-//bezierSurface(patches[26], 0.03, 5, 0.1);
-//bezierSurface(patches[27], 0.03, 5, 0.1);
-
-//for (patch=patches) bezierSurface(patch, 0.03, 17, 0.1, true); 
-//echo(dualSquareGridFaces(5));
-bezierSurface(patches[21], 0.04, 3, 0, true);
-bezierSurface(patches[22], 0.04, 3, 0, true);
-//bezierSurface(patches[20], 0.64, 3, 0);
-//
-points = [for (i=[0:3]) [for (j=[0:3]) offsetBezierSurfacePoint(patches[20], 0.1, i * (1 / 3), j * (1 / 3))]];
-echo(points);
-echo(interpolateMissingOffsetValues(points, patches[20], 0.1));
-//echo(patches[20]);
+bezierSolid(patches, 30, 0.2);
