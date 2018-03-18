@@ -1,10 +1,27 @@
-POLY_COEFFICIENTS = [[1],   // n=0
-            [1,1],          // n=1
-           [1,2,1],         // n=2
-          [1,3,3,1],        // n=3
-         [1,4,6,4,1],       // n=4
-        [1,5,10,10,5,1],    // n=5
-       [1,6,15,20,15,6,1]];  // n=6
+function pascalHalfLine(lineNumber, pos=0, elements=[]) = 
+  ((pos - 1) >= (lineNumber / 2) ? elements :
+    (pos == 0 ? pascalHalfLine(lineNumber, pos+1, [1]) :
+      pascalHalfLine(lineNumber, pos + 1, concat(elements, [elements[len(elements) -1] * ((lineNumber + 1 - pos) / pos)]))
+    )
+  );
+
+function reverseArray(arr, pos=0, reversed=[]) =
+  ((len(reversed) == len(arr)) ? reversed :
+    reverseArray(arr, pos + 1, concat(reversed, [arr[len(arr) - 1 - pos]]))
+  );
+
+function slice(arr, start=0, end=0, sliced=[]) =
+  (len(arr) == 0 ? sliced :
+    (end == 0 ? slice(arr, start, len(arr), sliced) :
+      (start == floor(end) ? sliced :
+        slice(arr, start + 1, floor(end), concat(sliced, [arr[start]]))
+      )
+    )
+  );
+
+function pascalLine(lineNumber) =
+  let (halfLine = pascalHalfLine(lineNumber))
+  concat(halfLine, reverseArray(slice(halfLine, 0, lineNumber / 2)));
 
 function solveDerivativeValue(t, tpow, oneMinusTPow, coefficient, weight) =
   weight * tpow * coefficient * pow(1 - t, oneMinusTPow) * pow(t, tpow == 0 ? 0 : tpow - 1) - weight * coefficient * oneMinusTPow * pow(1 - t, oneMinusTPow == 0 ? 0 : oneMinusTPow - 1) * pow(t, tpow);
@@ -20,10 +37,11 @@ function solveBezierSurfaceDerivative(u, t, coefficientArray, weightArray, direc
   );
 
 function bezierSurfaceTangentVec(u, t, controlPoints, direction) = 
+  let(coefficients = pascalLine(len(controlPoints) - 1))
   [
-    solveBezierSurfaceDerivative(u, t, POLY_COEFFICIENTS[len(controlPoints) - 1], [for (i=[0: len(controlPoints) - 1]) [for (j=[0:len(controlPoints) - 1]) controlPoints[i][j][0]]], direction),
-    solveBezierSurfaceDerivative(u, t, POLY_COEFFICIENTS[len(controlPoints) - 1], [for (i=[0: len(controlPoints) - 1]) [for (j=[0:len(controlPoints) - 1]) controlPoints[i][j][1]]], direction),
-    solveBezierSurfaceDerivative(u, t, POLY_COEFFICIENTS[len(controlPoints) - 1], [for (i=[0: len(controlPoints) - 1]) [for (j=[0:len(controlPoints) - 1]) len(controlPoints[i][j]) == 3 ? controlPoints[i][j][2] : 0]], direction)
+    solveBezierSurfaceDerivative(u, t, coefficients, [for (i=[0: len(controlPoints) - 1]) [for (j=[0:len(controlPoints) - 1]) controlPoints[i][j][0]]], direction),
+    solveBezierSurfaceDerivative(u, t, coefficients, [for (i=[0: len(controlPoints) - 1]) [for (j=[0:len(controlPoints) - 1]) controlPoints[i][j][1]]], direction),
+    solveBezierSurfaceDerivative(u, t, coefficients, [for (i=[0: len(controlPoints) - 1]) [for (j=[0:len(controlPoints) - 1]) len(controlPoints[i][j]) == 3 ? controlPoints[i][j][2] : 0]], direction)
   ];
 
 function bezierSurfaceNormal(u, t, controlPoints) = 
@@ -105,10 +123,11 @@ function solveBezierSurfacePolynomial(u, v, coefficientArray, weightArray, nposi
   );
 
 function bezierSurfacePoint(u, v, controlPoints) =
+  let(coefficients = pascalLine(len(controlPoints) - 1))
   [
-    solveBezierSurfacePolynomial(u, v, POLY_COEFFICIENTS[len(controlPoints) - 1], [for (i=[0: len(controlPoints) - 1]) [for (j=[0:len(controlPoints) - 1]) controlPoints[i][j][0]]]),
-    solveBezierSurfacePolynomial(u, v, POLY_COEFFICIENTS[len(controlPoints) - 1], [for (i=[0: len(controlPoints) - 1]) [for (j=[0:len(controlPoints) - 1]) controlPoints[i][j][1]]]),
-    solveBezierSurfacePolynomial(u, v, POLY_COEFFICIENTS[len(controlPoints) - 1], [for (i=[0: len(controlPoints) - 1]) [for (j=[0:len(controlPoints) - 1]) len(controlPoints[i][j]) == 3 ? controlPoints[i][j][2] : 0]]),
+    solveBezierSurfacePolynomial(u, v, coefficients, [for (i=[0: len(controlPoints) - 1]) [for (j=[0:len(controlPoints) - 1]) controlPoints[i][j][0]]]),
+    solveBezierSurfacePolynomial(u, v, coefficients, [for (i=[0: len(controlPoints) - 1]) [for (j=[0:len(controlPoints) - 1]) controlPoints[i][j][1]]]),
+    solveBezierSurfacePolynomial(u, v, coefficients, [for (i=[0: len(controlPoints) - 1]) [for (j=[0:len(controlPoints) - 1]) len(controlPoints[i][j]) == 3 ? controlPoints[i][j][2] : 0]]),
   ];
 
 function bezierSurfacePoints(controlPoints, samples=10) = 
@@ -131,10 +150,11 @@ function allSame(points, n=0) =
 */
 
 function bezierPoint(t, controlPoints) =
+  let(coefficients = pascalLine(len(controlPoints) - 1))
   [
-    solveBezierPolynomial(t, POLY_COEFFICIENTS[len(controlPoints) - 1], [for (i=[0: len(controlPoints) - 1]) controlPoints[i][0]]),
-    solveBezierPolynomial(t, POLY_COEFFICIENTS[len(controlPoints) - 1], [for (i=[0: len(controlPoints) - 1]) controlPoints[i][1]]),
-    solveBezierPolynomial(t, POLY_COEFFICIENTS[len(controlPoints) - 1], [for (i=[0: len(controlPoints) - 1]) len(controlPoints[i]) == 3 ? controlPoints[i][2] : 0]),
+    solveBezierPolynomial(t, coefficients, [for (i=[0: len(controlPoints) - 1]) controlPoints[i][0]]),
+    solveBezierPolynomial(t, coefficients, [for (i=[0: len(controlPoints) - 1]) controlPoints[i][1]]),
+    solveBezierPolynomial(t, coefficients, [for (i=[0: len(controlPoints) - 1]) len(controlPoints[i]) == 3 ? controlPoints[i][2] : 0]),
   ];
 
 function bezierPoints(controlPoints, samples=10) =
@@ -294,7 +314,7 @@ module bezierSurface(controlPointArrays, thickness=1, samples=10, controlPointSi
 module bezierSolid(faceControlPointsArray, samples=10, controlPointSize=1) {
   faces = flattenPoints([for (i=[0:len(faceControlPointsArray) - 1]) squareGridSurfaceFaces(samples, i)]);
   points = flattenPoints([for (i=faceControlPointsArray) flattenPoints(bezierSurfacePoints(i, samples))]);
-  polyhedron(points=points, faces=faces);
+  polyhedron(points=points, faces=[for (f=faces) reverseArray(f, 0)]);
   for (i=faceControlPointsArray) {
     showBezierSurfaceControlPoints(i, controlPointSize);
   }
