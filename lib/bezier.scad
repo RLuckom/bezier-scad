@@ -23,6 +23,126 @@ function pascalLine(lineNumber) =
   let (halfLine = pascalHalfLine(lineNumber))
   concat(halfLine, reverseArray(slice(halfLine, 0, lineNumber / 2)));
 
+function bezierSquare(bottomLeft=[0, 0, 0], topLeft=[0, 3, 0], bottomRight=[3, 0, 0], topRight=[3, 3, 0]) = 
+  let (
+    leftBottomMid = averagePoints([bottomLeft, bottomLeft, topLeft]),
+    leftTopMid = averagePoints([bottomLeft, topLeft, topLeft]),
+    rightBottomMid = averagePoints([bottomRight, bottomRight, topRight]),
+    rightTopMid = averagePoints([bottomRight, topRight, topRight])
+    )
+  [
+    [
+      bottomLeft,
+      averagePoints([bottomLeft, bottomLeft, bottomRight]),
+      averagePoints([bottomLeft, bottomRight, bottomRight]),
+      bottomRight
+    ],
+    [
+      leftBottomMid,
+      averagePoints([leftBottomMid, leftBottomMid, rightBottomMid]),
+      averagePoints([leftBottomMid, rightBottomMid, rightBottomMid]),
+      rightBottomMid
+    ],
+    [
+      leftTopMid,
+      averagePoints([leftTopMid, leftTopMid, rightTopMid]),
+      averagePoints([leftTopMid, rightTopMid, rightTopMid]),
+      rightTopMid
+    ],
+    [
+      topLeft,
+      averagePoints([topLeft, topLeft, topRight]),
+      averagePoints([topLeft, topRight, topRight]),
+      topRight
+    ]
+  ];
+
+function replacePoint(bezierSquare, rowToReplace, colToReplace, newPoint) =
+  [for (row = [0:len(bezierSquare) - 1])
+    [for (col = [0:len(bezierSquare[row]) - 1])
+      ((row == rowToReplace && col == colToReplace) ? newPoint :
+        bezierSquare[row][col]
+      )
+    ]
+  ];
+
+function replacePoints(bezierSquare, replacements) = 
+  (len(replacements) == 0 ? bezierSquare :
+    replacePoints(
+      replacePoint(
+        bezierSquare,
+        replacements[0][0], 
+        replacements[0][1], 
+        replacements[0][2] 
+      ),
+      slice(replacements, 1)
+    )
+  );
+
+function tieLeft(source, target) =
+  replacePoints(target, [
+    [0, 3, source[0][0]],
+    [1, 3, source[1][0]],
+    [2, 3, source[2][0]],
+    [3, 3, source[3][0]],
+  ]);
+
+function tieHardLeft(source, target) =
+  replacePoints(tieLeft(source, target), [
+    [0, 2, tie(source[0][0], source[0][1])],
+    [1, 2, tie(source[1][0], source[1][1])],
+    [2, 2, tie(source[2][0], source[2][1])],
+    [3, 2, tie(source[3][0], source[3][1])]
+  ]);
+
+function tieRight(source, target) =
+  replacePoints(target, [
+    [0, 0, source[0][3]],
+    [1, 0, source[1][3]],
+    [2, 0, source[2][3]],
+    [3, 0, source[3][3]],
+  ]);
+
+function tieHardRight(source, target) =
+  replacePoints(tieRight(source, target), [
+    [0, 1, tie(source[0][3], source[0][2])],
+    [1, 1, tie(source[1][3], source[1][2])],
+    [2, 1, tie(source[2][3], source[2][2])],
+    [3, 1, tie(source[3][3], source[3][2])]
+  ]);
+
+function tieTop(source, target) =
+  replacePoints(target, [
+    [0, 0, source[3][0]],
+    [0, 1, source[3][1]],
+    [0, 2, source[3][2]],
+    [0, 3, source[3][3]],
+  ]);
+
+function tieHardTop(source, target) =
+  replacePoints(tieTop(source, target), [
+    [1, 0, tie(source[3][0], source[2][0])],
+    [1, 1, tie(source[3][1], source[2][1])],
+    [1, 2, tie(source[3][2], source[2][2])],
+    [1, 3, tie(source[3][3], source[2][3])]
+  ]);
+
+function tieBottom(source, target) =
+  replacePoints(target, [
+    [3, 0, source[0][0]],
+    [3, 1, source[0][1]],
+    [3, 2, source[0][2]],
+    [3, 3, source[0][3]],
+  ]);
+
+function tieHardBottom(source, target) =
+  replacePoints(tieBottom(source, target), [
+    [2, 0, tie(source[0][0], source[1][0])],
+    [2, 1, tie(source[0][1], source[1][1])],
+    [2, 2, tie(source[0][2], source[1][2])],
+    [2, 3, tie(source[0][3], source[1][3])]
+  ]);
+
 function solveDerivativeValue(t, tpow, oneMinusTPow, coefficient, weight) =
   weight * tpow * coefficient * pow(1 - t, oneMinusTPow) * pow(t, tpow == 0 ? 0 : tpow - 1) - weight * coefficient * oneMinusTPow * pow(1 - t, oneMinusTPow == 0 ? 0 : oneMinusTPow - 1) * pow(t, tpow);
 
@@ -54,10 +174,10 @@ function normalize(vec) =
 
 function mult(vec, s) = [vec[0] * s, vec[1] * s, (len(vec) == 3 ? vec[2] * s : 0)];
 
-function addVecs(v1, v2) = [v1[0] + v2[0], v1[1] + v2[1], (len(v1) == 3 ? v1[2] : 0) + (len(v2) == 3 ? v2[2] : 0)];
+function addPoints(v1, v2) = [v1[0] + v2[0], v1[1] + v2[1], (len(v1) == 3 ? v1[2] : 0) + (len(v2) == 3 ? v2[2] : 0)];
 
 function offsetBezierSurfacePoint(controlPoints, offsetDistance, i, j) =
-  let (norm = bezierSurfaceNormal(i,j,controlPoints), surfacePoint = bezierSurfacePoint(i,j,controlPoints)) addVecs(surfacePoint, mult(norm, offsetDistance));
+  let (norm = bezierSurfaceNormal(i,j,controlPoints), surfacePoint = bezierSurfacePoint(i,j,controlPoints)) addPoints(surfacePoint, mult(norm, offsetDistance));
 
 function offsetBezierSurfacePoints(controlPoints, offsetDistance=5, samples=10) = 
   interpolateMissingOffsetValues(
@@ -86,7 +206,7 @@ function interpolateMissingOffsetValues(offsetPoints, controlPoints, offsetDista
 function filterSafe(points) = [for (p=points) if (!isUnsafe(p)) p];
 
 function addVecArray(vA, n=0, res=[0, 0, 0]) =
-  (n == len(vA) ? res : addVecArray(vA, n + 1, addVecs(res, vA[n])));
+  (n == len(vA) ? res : addVecArray(vA, n + 1, addPoints(res, vA[n])));
 
 function divVec(vec, scalar) =
   [vec[0] / scalar, vec[1] / scalar, len(vec) == 3 ? vec[2] / scalar : 0];
@@ -97,7 +217,7 @@ function interpolatePoint(points, row, col, u, t, utEpsilon, controlPoints, offs
     bezierSurfaceNormal(u - utEpsilon, t, controlPoints),
     bezierSurfaceNormal(u, t + utEpsilon, controlPoints),
     bezierSurfaceNormal(u, t - utEpsilon, controlPoints)
-  ])) (addVecs(
+  ])) (addPoints(
       bezierSurfacePoint(u, t, controlPoints), 
       mult(
         divVec(
@@ -107,6 +227,8 @@ function interpolatePoint(points, row, col, u, t, utEpsilon, controlPoints, offs
         offsetDistance
       )
      ));
+
+function averagePoints(pointArray) = divVec(addVecArray(pointArray), len(pointArray));
 
 function solveBezierSurfacePolynomialStep(u, v, coefficientArray, weightArray, nposition, mposition=0, result=0) = 
   (mposition >= len(coefficientArray) ? result :
@@ -235,14 +357,16 @@ module showBezierControlPoints(controlPoints, controlPointSize=1) {
   }
 }
 
-function sub(v1, v2) = [
+function subPoints(v1, v2) = [
   v1[0] - v2[0],
   v1[1] - v2[1],
   (len(v1) == 3 ? v1[2] : 0) -  (len(v2) == 3 ? v2[2] : 0)
 ];
 
+function tie(edgePoint, innerPoint) = addPoints(edgePoint, subPoints(edgePoint, innerPoint));
+
 function hasArea(points) = 
-  mag(cross(sub(points[0], points[1]), sub(points[1], points[2]))) > 0;
+  mag(cross(subPoints(points[0], points[1]), subPoints(points[1], points[2]))) > 0;
 
 function deleteZeroAreaFaces(points, faces, n=0, newFaces=[]) =
   (n == len(faces) ? newFaces : 
@@ -252,11 +376,28 @@ function deleteZeroAreaFaces(points, faces, n=0, newFaces=[]) =
   );
 
 module showBezierSurfaceControlPoints(controlPointArrays, controlPointSize=1) {
-  if (controlPointSize != 0) {
+  if (controlPointSize != 0 && len(controlPointArrays[0]) != 4) {
     for (controlPoints = controlPointArrays) {
       showBezierControlPoints(controlPoints, controlPointSize);
     }
-  }
+  } else {
+    %color("red", 1.0) translate([controlPointArrays[3][0][0], controlPointArrays[3][0][1], len(controlPointArrays[3][0]) == 3 ? controlPointArrays[3][0][2] : 0]) sphere(controlPointSize, center=true);
+    %color("blue", 1.0) translate([controlPointArrays[3][1][0], controlPointArrays[3][1][1], len(controlPointArrays[3][1]) == 3 ? controlPointArrays[3][1][2] : 0]) sphere(controlPointSize, center=true);
+    %color("blue", 1.0) translate([controlPointArrays[3][2][0], controlPointArrays[3][2][1], len(controlPointArrays[3][2]) == 3 ? controlPointArrays[3][2][2] : 0]) sphere(controlPointSize, center=true);
+    %color("red", 1.0) translate([controlPointArrays[3][3][0], controlPointArrays[3][3][1], len(controlPointArrays[3][3]) == 3 ? controlPointArrays[3][3][2] : 0]) sphere(controlPointSize, center=true);
+    %color("SpringGreen", 1.0) translate([controlPointArrays[2][3][0], controlPointArrays[2][3][1], len(controlPointArrays[2][3]) == 3 ? controlPointArrays[2][3][2] : 0]) sphere(controlPointSize, center=true);
+    %color("red", 1.0) translate([controlPointArrays[2][1][0], controlPointArrays[2][1][1], len(controlPointArrays[2][1]) == 3 ? controlPointArrays[2][1][2] : 0]) sphere(controlPointSize, center=true);
+    %color("red", 1.0) translate([controlPointArrays[2][2][0], controlPointArrays[2][2][1], len(controlPointArrays[2][2]) == 3 ? controlPointArrays[2][2][2] : 0]) sphere(controlPointSize, center=true);
+    %color("silver", 1.0) translate([controlPointArrays[2][0][0], controlPointArrays[2][0][1], len(controlPointArrays[2][0]) == 3 ? controlPointArrays[2][0][2] : 0]) sphere(controlPointSize, center=true);
+    %color("red", 1.0) translate([controlPointArrays[1][2][0], controlPointArrays[1][2][1], len(controlPointArrays[1][2]) == 3 ? controlPointArrays[1][2][2] : 0]) sphere(controlPointSize, center=true);
+    %color("red", 1.0) translate([controlPointArrays[1][1][0], controlPointArrays[1][1][1], len(controlPointArrays[1][1]) == 3 ? controlPointArrays[1][1][2] : 0]) sphere(controlPointSize, center=true);
+    %color("silver", 1.0) translate([controlPointArrays[1][0][0], controlPointArrays[1][0][1], len(controlPointArrays[1][0]) == 3 ? controlPointArrays[1][0][2] : 0]) sphere(controlPointSize, center=true);
+    %color("springgreen", 1.0) translate([controlPointArrays[1][3][0], controlPointArrays[1][3][1], len(controlPointArrays[1][3]) == 3 ? controlPointArrays[1][3][2] : 0]) sphere(controlPointSize, center=true);
+    %color("red", 1.0) translate([controlPointArrays[0][0][0], controlPointArrays[0][0][1], len(controlPointArrays[0][0]) == 3 ? controlPointArrays[0][0][2] : 0]) sphere(controlPointSize, center=true);
+    %color("Magenta", 1.0) translate([controlPointArrays[0][1][0], controlPointArrays[0][1][1], len(controlPointArrays[0][1]) == 3 ? controlPointArrays[0][1][2] : 0]) sphere(controlPointSize, center=true);
+    %color("Magenta", 1.0) translate([controlPointArrays[0][2][0], controlPointArrays[0][2][1], len(controlPointArrays[0][2]) == 3 ? controlPointArrays[0][2][2] : 0]) sphere(controlPointSize, center=true);
+    %color("red", 1.0) translate([controlPointArrays[0][3][0], controlPointArrays[0][3][1], len(controlPointArrays[0][3]) == 3 ? controlPointArrays[0][3][2] : 0]) sphere(controlPointSize, center=true);
+  }   
 }
 
 module bezierEnvelope(cp1, cp2, samples=10, controlPointSize=1) {
