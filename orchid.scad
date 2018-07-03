@@ -1,5 +1,5 @@
 use <./lib/bezier.scad>;
-w = 150;
+w = 150 * .9;
 wToH = 15 / 12;
 wBy2 = w / 2;
 a1x = wBy2 - wBy2 / 3;
@@ -39,10 +39,9 @@ s1p = replacePoints(s1, [
 
 wToD = 10 / 12;
 depth = wToD * w;
-halfOut = [-0.1, -h / 12, depth / 3];
-out = [-0.1, shouldery, depth];
+halfOut = [-0.4, -h / 12, depth / 3];
+out = [-1.8, shouldery, depth];
 
-s2 = bezierSquare(s1p[3][3], s1p[3][0], out, halfOut);
 s2 = bezierSquare(s1p[3][3], s1p[3][0], out, halfOut);
 
 //s2p = replacePoints(s2, [
@@ -58,8 +57,8 @@ s2p = replacePoints(s2, [
   [0, 1, [w / 3, shouldery, depth]],
   [1, 3, [s2[1][3][0], s2[1][3][1], depth]],
   [2, 3, [s2[2][3][0], s2[2][3][1], depth]],
-  [3, 1, [s2[3][1][0] - 0.2, s2[3][1][1] - 1, s2[3][1][2]]],
-  [3, 2, [s2[3][2][0] + 0.4, s2[3][2][1] - 1, s2[3][2][2]]],
+  [3, 1, [s2[3][1][0] - 7, s2[3][1][1] - 1, s2[3][1][2]]],
+  [3, 2, [s2[3][2][0] + 5, s2[3][2][1] - 1, s2[3][2][2]]],
 ]);
 
 thickness = 2;
@@ -67,8 +66,8 @@ thickness = 2;
 difference() {
 union() {
 bezierSurface(s1p, thickness=-thickness, controlPointSize=.2);
-bezierSurface(s2p, thickness=thickness, controlPointSize=.2);
-mirror([1, 0, 0]) bezierSurface(s2p, thickness=thickness, controlPointSize=.2);
+bezierSurface(s2p, thickness=thickness, controlPointSize=4);
+mirror([1, 0, 0]) bezierSurface(s2p, thickness=thickness, controlPointSize=4);
 }
 #translate([0, h - 30, -5]) cylinder(10, d=6, $fn=30);
 #translate([-w, -h, -1]) cube([w * 2, h * 2, 1]);

@@ -354,5 +354,12 @@ patches = [
 [[verts[270],verts[270],verts[270],verts[270]], [verts[300],verts[305],verts[306],verts[279]], [verts[297],verts[303],verts[304],verts[275]], [verts[294],verts[301],verts[302],verts[271]]]
 ];
 
+spout = [
+[[verts[162],verts[163],verts[164],verts[165]], [verts[166],verts[167],verts[168],verts[169]], [verts[170],verts[171],verts[172],verts[173]], [verts[174],verts[175],verts[176],verts[177]]],
+[[verts[165],verts[178],verts[179],verts[162]], [verts[169],verts[180],verts[181],verts[166]], [verts[173],verts[182],verts[183],verts[170]], [verts[177],verts[184],verts[185],verts[174]]],
+];
 
-bezierSolid(patches, 30, 0.2);
+bezierSolid(patches, 20, 0.2);
+//bezierEnvelope(spout[0], spout[1], 2, 0.2);
+
+//translate([10, 0, 0]) import_stl("./stl/teapot.stl");

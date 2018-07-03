@@ -255,6 +255,11 @@ function bezierSurfacePoint(u, v, controlPoints) =
 function bezierSurfacePoints(controlPoints, samples=10) = 
   [for (i=[0:samples]) [for (j=[0:samples]) bezierSurfacePoint(i * (1 / samples), j * (1 / samples), controlPoints)]];
 
+function bezierSurfacePointsAndNormals(controlPoints, samples=10) = 
+  [for (i=[0:samples]) [for (j=[0:samples]) [bezierSurfacePoint(i * (1 / samples), j * (1 / samples), controlPoints), bezierSurfaceNormal(i * (1 / samples),j * (1 / samples),controlPoints)]]];
+
+function bezierSurfacePointsAndFlatRotations(controlPoints, samples=10) = 
+  [for (i=[0:samples]) [for (j=[0:samples]) [bezierSurfacePoint(i * (1 / samples), j * (1 / samples), controlPoints), [0, 0, vecToAngle(bezierSurfacePoint(i * (1 / samples),j * (1 / samples),controlPoints))[1]]]]];
 
 function solveBezierPolynomial(t, coefficientArray, weightArray, position=0, result=0) =
   (position >= len(coefficientArray) ? result :
@@ -461,3 +466,46 @@ module bezierSolid(faceControlPointsArray, samples=10, controlPointSize=1) {
   }
 }
 
+function replacePointsCoords(bezierSquare, replacements) = 
+  (len(replacements) == 0 ? bezierSquare :
+    replacePointsCoords(
+      replacePoint(
+        bezierSquare,
+        replacements[0][0][0],
+        replacements[0][0][1], 
+        replacements[0][1]
+      ),
+      slice(replacements, 1)
+    )
+  );
+
+A = [0, 0];
+B = [0, 1];
+C = [0, 2];
+D = [0, 3];
+E = [1, 0];
+F = [1, 1];
+G = [1, 2];
+H = [1, 3];
+I = [2, 0];
+J = [2, 1];
+K = [2, 2];
+L = [2, 3];
+M = [3, 0];
+N = [3, 1];
+O = [3, 2];
+P = [3, 3];
+
+function reverseHandedness(m) =
+  [
+    [m[0][3], m[0][2], m[0][1], m[0][0]],
+    [m[1][3], m[1][2], m[1][1], m[1][0]],
+    [m[2][3], m[2][2], m[2][1], m[2][0]],
+    [m[3][3], m[3][2], m[3][1], m[3][0]],
+  ];
+
+function vecToAngle(v) = [
+  atan2(sqrt((v[1] * v[1]) + (v[2] * v[2])),v[0]),
+  atan2(sqrt((v[2] * v[2]) + (v[0] * v[0])),v[1]),
+  atan2(sqrt((v[0] * v[0]) + (v[1] * v[1])),v[2])
+];
