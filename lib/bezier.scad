@@ -1,27 +1,4 @@
-function pascalHalfLine(lineNumber, pos=0, elements=[]) = 
-  ((pos - 1) >= (lineNumber / 2) ? elements :
-    (pos == 0 ? pascalHalfLine(lineNumber, pos+1, [1]) :
-      pascalHalfLine(lineNumber, pos + 1, concat(elements, [elements[len(elements) -1] * ((lineNumber + 1 - pos) / pos)]))
-    )
-  );
-
-function reverseArray(arr, pos=0, reversed=[]) =
-  ((len(reversed) == len(arr)) ? reversed :
-    reverseArray(arr, pos + 1, concat(reversed, [arr[len(arr) - 1 - pos]]))
-  );
-
-function slice(arr, start=0, end=0, sliced=[]) =
-  (len(arr) == 0 ? sliced :
-    (end == 0 ? slice(arr, start, len(arr), sliced) :
-      (start == floor(end) ? sliced :
-        slice(arr, start + 1, floor(end), concat(sliced, [arr[start]]))
-      )
-    )
-  );
-
-function pascalLine(lineNumber) =
-  let (halfLine = pascalHalfLine(lineNumber))
-  concat(halfLine, reverseArray(slice(halfLine, 0, lineNumber / 2)));
+include <./vectors.scad>;
 
 function bezierSquare(bottomLeft=[0, 0, 0], topLeft=[0, 3, 0], bottomRight=[3, 0, 0], topRight=[3, 3, 0]) = 
   let (
@@ -31,31 +8,22 @@ function bezierSquare(bottomLeft=[0, 0, 0], topLeft=[0, 3, 0], bottomRight=[3, 0
     rightTopMid = averagePoints([bottomRight, topRight, topRight])
     )
   [
-    [
-      bottomLeft,
-      averagePoints([bottomLeft, bottomLeft, bottomRight]),
-      averagePoints([bottomLeft, bottomRight, bottomRight]),
-      bottomRight
-    ],
-    [
-      leftBottomMid,
-      averagePoints([leftBottomMid, leftBottomMid, rightBottomMid]),
-      averagePoints([leftBottomMid, rightBottomMid, rightBottomMid]),
-      rightBottomMid
-    ],
-    [
-      leftTopMid,
-      averagePoints([leftTopMid, leftTopMid, rightTopMid]),
-      averagePoints([leftTopMid, rightTopMid, rightTopMid]),
-      rightTopMid
-    ],
-    [
-      topLeft,
-      averagePoints([topLeft, topLeft, topRight]),
-      averagePoints([topLeft, topRight, topRight]),
-      topRight
-    ]
+    lineBetween(bottomLeft, bottomRight),
+    lineBetween(leftBottomMid, rightBottomMid),
+    lineBetween(leftTopMid, rightTopMid),
+    lineBetween(topLeft, topRight),
   ];
+
+function join(line1, line2) =
+   [ for (i=[0:len(line1) - 1]) [for (j=[0:len(line1) - 1]) [for (k=[0:len(line1[j]) - 1]) ((line1[j][k] * i) + (line2[j][k] * ((len(line1) - 1) - i))) / (len(line1) - 1)]]];
+
+function lineBetween(point1, point2) = 
+    [
+      point1,
+      averagePoints([point1, point1, point2]),
+      averagePoints([point2, point2, point1]),
+      point2
+    ];
 
 function replacePoint(bezierSquare, rowToReplace, colToReplace, newPoint) =
   [for (row = [0:len(bezierSquare) - 1])
@@ -169,13 +137,6 @@ function bezierSurfaceNormal(u, t, controlPoints) =
 
 function mag(vec) = let (z = len(vec) == 3 ? vec[2] : 0) sqrt(vec[0] * vec[0] + vec[1] * vec[1] + z * z);
 
-function normalize(vec) = 
-  let (z = len(vec) == 3 ? vec[2] : 0, m = mag(vec)) [vec[0] / m, vec[1] / m, z / m];
-
-function mult(vec, s) = [vec[0] * s, vec[1] * s, (len(vec) == 3 ? vec[2] * s : 0)];
-
-function addPoints(v1, v2) = [v1[0] + v2[0], v1[1] + v2[1], (len(v1) == 3 ? v1[2] : 0) + (len(v2) == 3 ? v2[2] : 0)];
-
 function offsetBezierSurfacePoint(controlPoints, offsetDistance, i, j) =
   let (norm = bezierSurfaceNormal(i,j,controlPoints), surfacePoint = bezierSurfacePoint(i,j,controlPoints)) addPoints(surfacePoint, mult(norm, offsetDistance));
 
@@ -205,12 +166,6 @@ function interpolateMissingOffsetValues(offsetPoints, controlPoints, offsetDista
 
 function filterSafe(points) = [for (p=points) if (!isUnsafe(p)) p];
 
-function addVecArray(vA, n=0, res=[0, 0, 0]) =
-  (n == len(vA) ? res : addVecArray(vA, n + 1, addPoints(res, vA[n])));
-
-function divVec(vec, scalar) =
-  [vec[0] / scalar, vec[1] / scalar, len(vec) == 3 ? vec[2] / scalar : 0];
-
 function interpolatePoint(points, row, col, u, t, utEpsilon, controlPoints, offsetDistance) =
   let (adjacentNorms = filterSafe([
     bezierSurfaceNormal(u + utEpsilon, t, controlPoints),
@@ -228,7 +183,6 @@ function interpolatePoint(points, row, col, u, t, utEpsilon, controlPoints, offs
       )
      ));
 
-function averagePoints(pointArray) = divVec(addVecArray(pointArray), len(pointArray));
 
 function solveBezierSurfacePolynomialStep(u, v, coefficientArray, weightArray, nposition, mposition=0, result=0) = 
   (mposition >= len(coefficientArray) ? result :
@@ -362,12 +316,6 @@ module showBezierControlPoints(controlPoints, controlPointSize=1) {
   }
 }
 
-function subPoints(v1, v2) = [
-  v1[0] - v2[0],
-  v1[1] - v2[1],
-  (len(v1) == 3 ? v1[2] : 0) -  (len(v2) == 3 ? v2[2] : 0)
-];
-
 function tie(edgePoint, innerPoint) = addPoints(edgePoint, subPoints(edgePoint, innerPoint));
 
 function hasArea(points) = 
@@ -457,6 +405,23 @@ module bezierSurface(controlPointArrays, thickness=1, samples=10, controlPointSi
   showBezierSurfaceControlPoints(controlPointArrays, controlPointSize);
 }
 
+module bezierSurfaceFromTwoFaces(controlPointArrays1, controlPointArrays2, samples=10, controlPointSize=1, checkFaces=false) {
+  p = concat(
+    flattenPoints(bezierSurfacePoints(controlPointArrays1, samples)),
+    flattenPoints(bezierSurfacePoints(controlPointArrays2, samples))
+  );
+  naiveFaces = dualSquareGridFaces(samples);
+  if (checkFaces) {
+    unsafePoints = findUnsafePoints(p);
+    facesWithoutUnsafePoints = filterOutUnsafeFaces(naiveFaces, unsafePoints);
+    polyhedron(points=zeroOutUnsafePoints(p, unsafePoints), faces=deleteZeroAreaFaces(p, filterOutUnsafeFaces(facesWithoutUnsafePoints, unsafePoints)));
+  } else {
+    polyhedron(points=p, faces=naiveFaces);
+  }
+  showBezierSurfaceControlPoints(controlPointArrays1, controlPointSize);
+  showBezierSurfaceControlPoints(controlPointArrays2, controlPointSize);
+}
+
 module bezierSolid(faceControlPointsArray, samples=10, controlPointSize=1) {
   faces = flattenPoints([for (i=[0:len(faceControlPointsArray) - 1]) squareGridSurfaceFaces(samples, i)]);
   points = flattenPoints([for (i=faceControlPointsArray) flattenPoints(bezierSurfacePoints(i, samples))]);
@@ -503,9 +468,3 @@ function reverseHandedness(m) =
     [m[2][3], m[2][2], m[2][1], m[2][0]],
     [m[3][3], m[3][2], m[3][1], m[3][0]],
   ];
-
-function vecToAngle(v) = [
-  atan2(sqrt((v[1] * v[1]) + (v[2] * v[2])),v[0]),
-  atan2(sqrt((v[2] * v[2]) + (v[0] * v[0])),v[1]),
-  atan2(sqrt((v[0] * v[0]) + (v[1] * v[1])),v[2])
-];

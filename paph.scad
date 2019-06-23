@@ -1,29 +1,30 @@
 include <./lib/bezier.scad>;
-w = 15;
-h = 21;
+w = 26;
+h = 28;
 hexoffset = w / 3;
 wexoffset = h / 3;
 hex = (h - wexoffset) * (h / w) - 5;
 wex = (w - hexoffset) * (w / h) - 5;
 
-layerheight = 25;
+layerheight = 31;
 l1 = layerheight + 15;
-l1belly = 30;
+l1belly = 20;
 l2 = layerheight * 2;
 l2belly = 15;
 l3 = layerheight * 3;
-l3belly = 30;
+l3belly = 20;
 lean = 7;
 lean1 = lean;
 lean2 = lean * 2;
 lean3 = lean * 3;
-SAMPLES = 10;
+SAMPLES = 40;
 
 TOP_SLANT = -0.25;
 ts = TOP_SLANT;
 
-zh = layerheight * 5;
+zh = layerheight * 5.5;
 toplean = .07;
+topround = 5;
 
 THICKNESS=3;
 
@@ -72,9 +73,9 @@ tl = toplean;
 
 s5 = [
   s3[3],
-  [[-w - l3belly, h + hex + lean3 + l3belly + tl * (s3[3][0][2] + (zh - s3[3][0][2]) / 3), s3[3][0][2] + (zh - s3[3][0][2]) / 3], [-hexoffset, h + hex + lean3 + l3belly + tl * (s3[3][1][2] + (zh - s3[3][1][2]) / 3), s3[3][1][2] + (zh - s3[3][1][2]) / 3], [hexoffset, h + hex + lean3 + l3belly + tl * (s3[3][2][2] + (zh - s3[3][2][2]) / 3),  s3[3][2][2] + (zh - s3[3][2][2]) / 3], [w + l3belly, h + hex + lean3 + l3belly + tl * (s3[3][3][2] + (zh -s3[3][3][2]) / 3), s3[3][3][2] + (zh - s3[3][3][2]) / 3]],
+  [tie(s3[3][0], s3[2][0]), [-hexoffset, h + hex + lean3 + l3belly + tl * (s3[3][1][2] + (zh - s3[3][1][2]) / 3), s3[3][1][2] + (zh - s3[3][1][2]) / 3], [hexoffset, h + hex + lean3 + l3belly + tl * (s3[3][2][2] + (zh - s3[3][2][2]) / 3),  s3[3][2][2] + (zh - s3[3][2][2]) / 3], tie(s3[3][3], s3[2][3])],
   [[-w - l3belly, h + hex + lean3 + l3belly + tl * (s3[3][0][2] + (zh - s3[3][0][2]) / 3 * 2), s3[3][0][2] + (zh - s3[3][0][2]) / 3 * 2], [-hexoffset, h + hex + lean3 + l3belly + tl * (s3[3][0][2] + (zh - s3[3][0][2]) / 3 * 2), s3[3][1][2] + (zh - s3[3][1][2]) / 3 * 2], [hexoffset, h + hex + lean3 + l3belly + tl * (s3[3][2][2] + (zh - s3[3][2][2]) / 3 * 2), s3[3][2][2] + (zh - s3[3][2][2]) / 3 * 2], [w + l3belly, h + hex + lean3 + l3belly + tl * (s3[3][3][2] + (zh - s3[3][3][2]) / 3 * 2), s3[3][3][2] + (zh - s3[3][3][2]) / 3 * 2]],
-  [[-w , h + hex + lean3 + l3belly + tl * zh, zh - 2], [-hexoffset, h + hex + lean3 + l3belly + tl * zh, zh], [hexoffset, h + hex + lean3 + l3belly + tl * zh, zh], [w, h + hex + lean3 + l3belly + tl * zh, zh - 2]]
+  [[-w , h + hex + lean3 + l3belly + tl * zh, zh - 2], [-hexoffset, h + hex + lean3 + l3belly + tl * zh, zh + topround], [hexoffset, h + hex + lean3 + l3belly + tl * zh, zh + topround], [w, h + hex + lean3 + l3belly + tl * zh, zh - 2]]
 ];
 
 module bezierSphere(controlPoints, samples=10, controlPointSize=1, startSize=1, endSize=1) {
@@ -119,7 +120,7 @@ module cup(thickness=THICKNESS) {
 }
 
 module keyhole(topY, topZ) {
-#translate([0, topY, 110]) rotate([90, 0, 0])  cylinder(10, d=6, $fn=30);
+#translate([0, topY, topZ]) rotate([90, 0, 0])  cylinder(10, d=6, $fn=30);
 #translate([-3, topY - 10, topZ - 6]) cube([6, 10, 6]);
 #translate([0, topY, topZ - 8]) rotate([90, 0, 0])  cylinder(10, d=9, $fn=30);
 }
@@ -131,8 +132,8 @@ module base(w, h) {
 module small() {
 difference() {
 cup(thickness=3);
-keyhole(h + 73, 110);
-base();
+keyhole(h + 67, 155);
+base(w, h);
 dia = 10;
 #translate([0, -h, -4]) cylinder(10, d=dia, $fn=20);
 
