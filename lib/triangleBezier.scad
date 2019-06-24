@@ -89,31 +89,46 @@ function cubicTriangleSurfacePointTerms(powerArray, coefficients, controlPoints,
 // A list of 3-vectors corresponding to faces represented as indicies
 // into a flat array with the structure defined in `getTriangleIndex` using a detail 
 // level as specified in `cubicTriangleSurfacePoints`
-function triangleFaces(detail) =
+function triangleFaces(detail, start=0) =
   flattenPoints([for (row=[0:detail * 3 - 1])
     flattenPoints([for (index=[0:row]) 
       index == 0 ?
         [
           [
-            getTriangleIndex(row, index), 
-            getTriangleIndex(row + 1, index),
-            getTriangleIndex(row + 1, index + 1)
+            getTriangleIndex(row, index) + start, 
+            getTriangleIndex(row + 1, index) + start,
+            getTriangleIndex(row + 1, index + 1) + start
           ]
         ]
       :
         [
           [
-            getTriangleIndex(row, index),
-            getTriangleIndex(row, index - 1), 
-            getTriangleIndex(row + 1, index)
+            getTriangleIndex(row, index) + start,
+            getTriangleIndex(row, index - 1) + start,
+            getTriangleIndex(row + 1, index) + start
           ],
           [
-            getTriangleIndex(row, index),
-            getTriangleIndex(row + 1, index),
-            getTriangleIndex(row + 1, index + 1)
+            getTriangleIndex(row, index) + start,
+            getTriangleIndex(row + 1, index) + start,
+            getTriangleIndex(row + 1, index + 1) + start
           ]
         ]
       ])
+  ]);
+
+
+function multipleTriangleFaces(detail, n) =
+  (let (
+    size=len(nChooseKSum(3 * detail, 3))
+  )
+  flattenPoints([for (face=[0:n - 1])
+    triangleFaces(detail, face * size)
+  ])
+  );
+
+function multipleCubicTriangleSurfacePoints(controlPointSets, detail) = 
+  flattenPoints([for (controlPoints=controlPointSets)
+    cubicTriangleSurfacePoints(controlPoints, detail)
   ]);
 
 
