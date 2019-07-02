@@ -16,4 +16,4 @@ echo(cubicTriangleSurfacePointTerms(
    [12, 0, 0],
    12
 ));
-polyhedron(points=cubicTriangleSurfacePoints(nChooseKSum(3,3), 8), faces=(triangleFaces(8)));
+polyhedron(points=mirrorPointsArray([0,0, 1], translatePointsArray([0, 0, 3], cubicTriangleSurfacePoints(nChooseKSum(3,3), 8))), faces=(triangleFaces(8)));

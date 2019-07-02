@@ -116,7 +116,6 @@ function triangleFaces(detail, start=0) =
       ])
   ]);
 
-
 function multipleTriangleFaces(detail, n) =
   (let (
     size=len(nChooseKSum(3 * detail, 3))
@@ -131,6 +130,34 @@ function multipleCubicTriangleSurfacePoints(controlPointSets, detail) =
     cubicTriangleSurfacePoints(controlPoints, detail)
   ]);
 
+// Rotate an array of points. `angles` must be an array of [x, y, z] where
+// each element is a rotation in degrees about the named axis. The rotations are applied in
+// the order X, Y, Z
+function rotatePointArray(angles, pointArray) =
+  (let (
+    xRotMat = [[1, 0, 0], [0, cos(angles[0]), -sin(angles[0])], [0, sin(angles[0]), cos(angles[0])]],
+    yRotMat = [[cos(angles[1]), 0, sin(angles[1])], [0, 1, 0], [-sin(angles[1]), 0, cos(angles[1])]],
+    zRotMat = [[cos(angles[2]), -sin(angles[2]), 0], [sin(angles[2]), cos(angles[2]), 0], [0, 0, 1]]
+    )
+  [for (point=pointArray) point * xRotMat * yRotMat * zRotMat]
+);
+
+// translate an array of points by `vec` 
+function translatePointsArray(vec, pointsArray) =
+  [for (point=pointsArray) point + vec];
+
+// mirror an array of points about a plane through the origin whose normal
+// is `vec`. `vec` will be normalized.
+function mirrorPointsArray(vec, pointsArray) = 
+  (let (
+      n = normalize(vec),
+      mirrorMat = [
+        [1 - 2 * n[0] * n[0], -2 * n[0] * n[1], -2 * n[0] * n[2]],
+        [-2 * n[0] * n[1], 1 - 2 * n[1] * n[1], -2 * n[1] * n[2]],
+        [-2 * n[0] * n[2], -2 * n[1] * n[2], 1 - 2 * n[2] * n[2]]
+      ])
+    [for (point=pointsArray) point * mirrorMat]
+  );
 
 // flips a triagle, reversing a and y in the wikipedia image above.
 function flipTriangle(triangle, rows) = 
