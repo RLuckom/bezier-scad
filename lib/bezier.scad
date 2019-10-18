@@ -305,7 +305,7 @@ module bezier(controlPoints, samples=10, controlPointSize=1) {
       translate(points[point]) children(0);
     }
   }
-  showBezierControlPoints(controlPoints);
+  showBezierControlPoints(controlPoints, controlPointSize);
 }
 
 module showBezierControlPoints(controlPoints, controlPointSize=1) {

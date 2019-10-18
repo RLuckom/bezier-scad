@@ -1,0 +1,22 @@
+use <./lib/bezier.scad>;
+
+TUBE_WIDTH = 0.8;
+WALL_THICKNESS = TUBE_WIDTH * 2 + 10;
+CUP_HEIGHT = 60;
+CUP_DIA = WALL_THICKNESS * 2 + 40;
+TUBE_CURVE_HEIGHT = CUP_HEIGHT / 3;
+
+module cup() {
+translate([0, 0, CUP_HEIGHT / 2]) difference() {
+  cylinder(CUP_HEIGHT, d=CUP_DIA, $fn=60, center=true);
+  translate([0, 0, WALL_THICKNESS]) cylinder(CUP_HEIGHT, d=CUP_DIA - WALL_THICKNESS * 2, $fn=60, center=true);
+}
+}
+
+difference() {
+cup();
+bezier([[CUP_DIA / 2 - WALL_THICKNESS + 2 + TUBE_WIDTH / 2, 0, TUBE_WIDTH / 2 + 5], [CUP_DIA / 2 - WALL_THICKNESS + 2 + TUBE_WIDTH / 2, 0, CUP_HEIGHT - TUBE_CURVE_HEIGHT - TUBE_WIDTH / 2]], samples=2) sphere(TUBE_WIDTH, $fn=40);
+bezier([[CUP_DIA / 2 - WALL_THICKNESS + 2 + TUBE_WIDTH / 2, 0, CUP_HEIGHT - TUBE_CURVE_HEIGHT - TUBE_WIDTH / 2], [CUP_DIA / 2 - WALL_THICKNESS + 2 + TUBE_WIDTH / 2, 0, CUP_HEIGHT - 4 - TUBE_WIDTH / 2], [CUP_DIA / 2 - WALL_THICKNESS + 4 + TUBE_WIDTH * 3, 0, CUP_HEIGHT - 4 - TUBE_WIDTH / 2], [CUP_DIA / 2 - WALL_THICKNESS + 4 + TUBE_WIDTH * 3, 0, CUP_HEIGHT - TUBE_CURVE_HEIGHT - TUBE_WIDTH / 2]], samples=10) sphere(TUBE_WIDTH, $fn=40);
+bezier([[CUP_DIA / 2 - WALL_THICKNESS + 4 + TUBE_WIDTH * 3, 0, -3], [CUP_DIA / 2 - WALL_THICKNESS + 4 + TUBE_WIDTH * 3, 0, CUP_HEIGHT - TUBE_CURVE_HEIGHT - TUBE_WIDTH / 2]], samples=2) sphere(TUBE_WIDTH, $fn=40);
+bezier([[CUP_DIA / 2 - WALL_THICKNESS + 2 + TUBE_WIDTH / 2, 0, TUBE_WIDTH / 2 + 5], [CUP_DIA / 2 - WALL_THICKNESS + 2 + TUBE_WIDTH / 2, 0, 0], [CUP_DIA / 2 - WALL_THICKNESS - TUBE_WIDTH - 4, 0, TUBE_WIDTH / 2 + 5], [CUP_DIA / 2 - WALL_THICKNESS - TUBE_WIDTH - 4, 0, WALL_THICKNESS + 5]], samples=10) sphere(TUBE_WIDTH, $fn=40);
+}

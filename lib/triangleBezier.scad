@@ -146,6 +146,23 @@ function rotatePointArray(angles, pointArray) =
 function translatePointsArray(vec, pointsArray) =
   [for (point=pointsArray) point + vec];
 
+
+// 
+function radiusTriangle(rad, angle) = 
+  (let (
+    zero = [0, 0, 0],
+    six = [rad, 0, 0],
+    nine = [rad * cos(angle), rad * sin(angle), 0]
+    )
+    interpolatedControlPoints(zero, six, nine)
+  );
+
+function interpolatedControlPoints(zero, six, nine) = 
+  [zero, zero + ((six - zero) / 3), zero + ((nine - zero) / 3), zero + (((six - zero) / 3) * 2), (zero + six + nine) / 3, zero + (((nine - zero) / 3) * 2), six, six + ((nine - six) / 3), six + (((nine - six) / 3) * 2), nine];
+
+function flipTriangleControlPoints(cp) = 
+  [cp[0], cp[2], cp[1], cp[5], cp[4], cp[3], cp[9], cp[8], cp[7], cp[6]];
+
 // mirror an array of points about a plane through the origin whose normal
 // is `vec`. `vec` will be normalized.
 function mirrorPointsArray(vec, pointsArray) = 
