@@ -1,0 +1,36 @@
+UNIT = 16;
+HALF_UNIT = UNIT / 2;
+HEIGHT = UNIT * 4;
+UNIT_WIDTH = sqrt(UNIT * UNIT + HALF_UNIT * HALF_UNIT);
+THICKNESS=1;
+
+POINTS = [
+  [-4 * UNIT_WIDTH, -UNIT],
+  [-4 * UNIT_WIDTH, UNIT],
+  [-3 * UNIT_WIDTH, UNIT + HALF_UNIT],
+  [-3 * UNIT_WIDTH, 2 * UNIT + HALF_UNIT],
+  [-UNIT_WIDTH, 3 * UNIT + HALF_UNIT],
+  [0, 3 * UNIT],
+  [UNIT_WIDTH, 3 * UNIT + HALF_UNIT],
+  [3 * UNIT_WIDTH, 2 * UNIT + HALF_UNIT],
+  [3 * UNIT_WIDTH, UNIT + HALF_UNIT],
+  [4 * UNIT_WIDTH, UNIT],
+  [4 * UNIT_WIDTH, -UNIT],
+  [3 * UNIT_WIDTH, -UNIT - HALF_UNIT],
+  [3 * UNIT_WIDTH, -2 * UNIT - HALF_UNIT],
+  [UNIT_WIDTH, -3 * UNIT - HALF_UNIT],
+  [0, -3 * UNIT],
+  [-UNIT_WIDTH, -3 * UNIT - HALF_UNIT],
+  [-3 * UNIT_WIDTH, -2 * UNIT - HALF_UNIT],
+  [-3 * UNIT_WIDTH, -UNIT - HALF_UNIT],
+  [-4 * UNIT_WIDTH, -UNIT],
+  [-2 * UNIT_WIDTH, -UNIT],
+  [-2 * UNIT_WIDTH, UNIT],
+  [0, 2 * UNIT],
+  [2 * UNIT_WIDTH, UNIT],
+  [2 * UNIT_WIDTH, -UNIT],
+  [0, -2 * UNIT],
+  [-2 * UNIT_WIDTH, -UNIT],
+];
+
+linear_extrude(THICKNESS) polygon(points=POINTS, paths=[[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18], [19, 20, 21, 22, 23, 24, 25]]);
