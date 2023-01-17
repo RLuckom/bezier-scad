@@ -311,7 +311,7 @@ module bezier(controlPoints, samples=10, controlPointSize=1) {
 module showBezierControlPoints(controlPoints, controlPointSize=1) {
   if (controlPointSize != 0) {
     for (cp = controlPoints) {
-      %color("red", 1.0) translate([cp[0], cp[1], len(cp) == 3 ? cp[2] : 0]) sphere(controlPointSize, center=true);
+      %color("red", 1.0) translate([cp[0], cp[1], len(cp) == 3 ? cp[2] : 0]) sphere(controlPointSize);
     }
   }
 }
